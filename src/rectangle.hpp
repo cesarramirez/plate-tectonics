@@ -236,7 +236,7 @@ public:
         _bottom += dy;
     }
 
-    std::string to_string()
+    std::string to_string() const
     {
         std::string s("Rectangle[");
         s = s + "left=" + Platec::to_string(_left);

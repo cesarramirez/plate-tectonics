@@ -31,6 +31,15 @@ TEST(Rectangle, MapIndexInsideRectNotWrapping)
     ASSERT_EQ(res, 6);
 }
 
+#define EXPECT_EXC(code) do {            \
+    try {                                \
+      code;                              \
+      ASSERT_EQ(false, true);            \
+    } catch (const exception& exc){      \
+        /* ok */                         \
+    }                                    \
+} while (false);
+
 TEST(Rectangle, MapIndexOutsideRect)
 {
     Rectangle r = Rectangle(WorldDimension(50, 30), 42, 48, 8, 15);
@@ -38,24 +47,15 @@ TEST(Rectangle, MapIndexOutsideRect)
 
     px = 49;
     py =  8;
-    res = r.getMapIndex(&px, &py);
-    ASSERT_EQ(px, 49);
-    ASSERT_EQ(py, 8);
-    ASSERT_EQ(res, -1);
+    EXPECT_EXC(r.getMapIndex(&px, &py));
 
     px = 48;
     py =  15;
-    res = r.getMapIndex(&px, &py);
-    ASSERT_EQ(px, 48);
-    ASSERT_EQ(py, 15);
-    ASSERT_EQ(res, -1);
+    EXPECT_EXC(r.getMapIndex(&px, &py));
 
     px = 2;
     py = 2;
-    res = r.getMapIndex(&px, &py);
-    ASSERT_EQ(px, 2);
-    ASSERT_EQ(py, 2);
-    ASSERT_EQ(res, -1);
+    EXPECT_EXC(r.getMapIndex(&px, &py));
 }
 
 TEST(Rectangle, MapIndexInsideRectWrappingOnX)

@@ -94,7 +94,8 @@ uint32_t Rectangle::getMapIndex(uint32_t* px, uint32_t* py) const
     } else {
         throw std::invalid_argument(std::string("Rectangle::mapIndex, index cannot be obtained: x=")
             + Platec::to_string(*px)
-            + ", y="+Platec::to_string(*py));
+            + ", y="+Platec::to_string(*py)
+            + ", rect="+to_string());
     }
 }
 

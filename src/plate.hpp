@@ -68,14 +68,15 @@ public:
         }
         return segment[index];
     }
-    void check(Dimension d, ContinentId* otherData)
+    void check(Dimension d, ContinentId* otherData, const std::string& context="<unknown>") const
     {
     	p_assert(d==_dimension, "check continents dimensions");
     	for (int i=0;i<_dimension.getArea();i++){
     		p_assert(segment[i]==otherData[i], 
     			std::string("check continents segment data, index "+Platec::to_string(i)
     				+ ", segment[i]="+Platec::to_string(segment[i])
-    				+ ", otherData[i]="+Platec::to_string(otherData[i])));
+    				+ ", otherData[i]="+Platec::to_string(otherData[i]))
+    			    + " in "+context);
     	}
     }
 private:

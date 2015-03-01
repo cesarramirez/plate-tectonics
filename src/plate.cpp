@@ -69,7 +69,6 @@ plate::plate(long seed, const float* m, uint32_t w, uint32_t h, uint32_t _x, uin
     vx = cos(angle) * INITIAL_SPEED_X;
     vy = sin(angle) * INITIAL_SPEED_X;
     memset(segment, 255, plate_area * sizeof(uint32_t));
-    _continents.check(_dimension, segment);
 
     uint32_t k;
     for (uint32_t y = k = 0; y < _dimension.getHeight(); ++y) {
@@ -94,7 +93,7 @@ plate::plate(long seed, const float* m, uint32_t w, uint32_t h, uint32_t _x, uin
     cx /= mass;
     cy /= mass;
 
-    _continents.check(_dimension, segment);
+    _continents.check(_dimension, segment, "constructor");
 }
 
 plate::~plate() throw()
@@ -107,6 +106,7 @@ uint32_t plate::addCollision(uint32_t wx, uint32_t wy)
 {
     ContinentId seg = getContinentAt(wx, wy);
     seg_data[seg].incCollCount();
+    _continents.check(_dimension, segment, "addCollision");
     return seg_data[seg].area();
 }
 
@@ -123,6 +123,7 @@ try {
 
     data.incArea();
     data.enlarge_to_contain(x, y);
+    _continents.check(_dimension, segment);
 } catch (const exception& e){
     std::string msg = "Problem during plate::addCrustByCollision: ";
     msg = msg + e.what();
@@ -183,6 +184,7 @@ try {
         map[index] += z;
         mass += z;
     }
+    _continents.check(_dimension, segment, "addCrustBySubduction");
 } catch (const exception& e){
     std::string msg = "Problem during plate::addCrustBySubduction: ";
     msg = msg + e.what();
@@ -252,6 +254,7 @@ try {
     }
 
     seg_data[seg_id].markNonExistent(); // Mark segment as non-existent
+    _continents.check(_dimension, segment, "aggregateCrust");
     return old_mass - mass;
 } catch (const exception& e){
     std::string msg = "Problem during plate::aggregateCrust: ";
@@ -274,6 +277,7 @@ void plate::applyFriction(float deformed_mass)
         // However, it's a hack well worth the outcome. :)
         velocity -= vel_dec;
     }
+    _continents.check(_dimension, segment);
 }
 
 void plate::collide(plate& p, uint32_t wx, uint32_t wy, float coll_mass)
@@ -389,6 +393,7 @@ try {
     // We see that in with restitution 0, both balls continue at same
     // speed along X axis. However at the same time ball B continues its
     // path upwards like it should. Seems correct right?
+    _continents.check(_dimension, segment);
 } catch (const exception& e){
     std::string msg = "Problem during plate::collide: ";
     msg = msg + e.what();
@@ -421,6 +426,7 @@ void plate::calculateCrust(uint32_t x, uint32_t y, uint32_t index,
     ::calculateCrust(x, y, index, w_crust, e_crust, n_crust, s_crust,
         w, e, n, s, 
         _worldDimension, map, _dimension.getWidth(), _dimension.getHeight());
+    _continents.check(_dimension, segment);
 }
 
 void plate::findRiverSources(float lower_bound, vector<uint32_t>* sources)
@@ -949,6 +955,7 @@ uint32_t plate::calcDirection(uint32_t x, uint32_t y, const uint32_t origin_inde
 void plate::scanSpans(const uint32_t line, uint32_t& start, uint32_t& end,
     std::vector<uint32_t>* spans_todo, std::vector<uint32_t>* spans_done)
 {
+    _continents.check(_dimension, segment, "scanSpans start");
     do // Find an unscanned span on this line.
     {
         end = spans_todo[line].back();
@@ -980,11 +987,13 @@ void plate::scanSpans(const uint32_t line, uint32_t& start, uint32_t& end,
         end -= (end >= _dimension.getWidth());
 
     } while (start > end && spans_todo[line].size());
+    _continents.check(_dimension, segment, "scanSpans end");
 }
 
 uint32_t plate::createSegment(uint32_t x, uint32_t y) throw()
 {
-try {    
+try {        
+    _continents.check(_dimension, segment, "createSegment start");
     const uint32_t origin_index = y * _dimension.getWidth() + x;
     const uint32_t ID = seg_data.size();
 
@@ -997,12 +1006,14 @@ try {
     if (nbour_id < ID)
     {
         segment[origin_index] = nbour_id;
+        _continents[origin_index] = nbour_id;
         seg_data[nbour_id].incArea();
 
         seg_data[nbour_id].enlarge_to_contain(x, y);
 
         return nbour_id;
     }
+    printf("CreateSegment start\n");
 
     uint32_t lines_processed;
     Platec::Rectangle r = Platec::Rectangle(_worldDimension, x, x, y, y);
@@ -1012,11 +1023,15 @@ try {
     std::vector<uint32_t>* spans_done = new std::vector<uint32_t>[_dimension.getHeight()];
 
     segment[origin_index] = ID;
+    _continents[origin_index] = ID;
     spans_todo[y].push_back(x);
     spans_todo[y].push_back(x);
 
+    _continents.check(_dimension, segment, "createSegment checkpoint1");
+
     do
     {
+      printf("CreateSegment loop\n");
       lines_processed = 0;
       for (uint32_t line = 0; line < _dimension.getHeight(); ++line)
       {
@@ -1044,9 +1059,11 @@ try {
         {
             --start;
             segment[line_here + start] = ID;
+            _continents[line_here + start] = ID;
 
             // Count volume of pixel...
         }
+        //_continents.check(_dimension, segment, "createSegment checkpoint2a");
 
         // Extend the end of line.
         while (end < _dimension.getWidth() - 1 &&
@@ -1055,6 +1072,7 @@ try {
         {
             ++end;
             segment[line_here + end] = ID;
+            _continents[line_here + end] = ID;
 
             // Count volume of pixel...
         }
@@ -1065,11 +1083,13 @@ try {
             map[line_here+_dimension.getWidth()-1] >= CONT_BASE)
         {
             segment[line_here + _dimension.getWidth() - 1] = ID;
+            _continents[line_here + _dimension.getWidth() - 1] = ID;
             spans_todo[line].push_back(_dimension.getWidth() - 1);
             spans_todo[line].push_back(_dimension.getWidth() - 1);
 
             // Count volume of pixel...
         }
+        //_continents.check(_dimension, segment, "createSegment checkpoint2b");
 
         // Check if should wrap around right edge.
         if (_dimension.getWidth() == _worldDimension.getWidth() && end == _dimension.getWidth() - 1 &&
@@ -1077,6 +1097,7 @@ try {
             map[line_here+0] >= CONT_BASE)
         {
             segment[line_here + 0] = ID;
+            _continents[line_here + 0] = ID;
             spans_todo[line].push_back(0);
             spans_todo[line].push_back(0);
 
@@ -1098,6 +1119,7 @@ try {
               {
                 uint32_t a = j;
                 segment[line_above + a] = ID;
+                _continents[line_above + a] = ID;
 
                 // Count volume of pixel...
 
@@ -1106,6 +1128,7 @@ try {
                        map[line_above + j] >= CONT_BASE)
                 {
                     segment[line_above + j] = ID;
+                    _continents[line_above + j] = ID;
 
                     // Count volume of pixel...
                 }
@@ -1117,6 +1140,7 @@ try {
                 ++j; // Skip the last scanned point.
               }
         }
+        //_continents.check(_dimension, segment, "createSegment checkpoint2c");
 
         if (line < _dimension.getHeight() - 1 || _dimension.getHeight() == _worldDimension.getHeight()) {
             for (uint32_t j = start; j <= end; ++j)
@@ -1125,6 +1149,7 @@ try {
               {
                 uint32_t a = j;
                 segment[line_below + a] = ID;
+                _continents[line_below + a] = ID;
 
                 // Count volume of pixel...
 
@@ -1133,6 +1158,7 @@ try {
                        map[line_below + j] >= CONT_BASE)
                 {
                     segment[line_below + j] = ID;
+                    _continents[line_below + j] = ID;
 
                     // Count volume of pixel...
                 }
@@ -1148,6 +1174,8 @@ try {
         spans_done[line].push_back(start);
         spans_done[line].push_back(end);
         ++lines_processed;
+
+        //_continents.check(_dimension, segment, "createSegment checkpoint2d");
       }
     } while (lines_processed > 0);
 
@@ -1155,6 +1183,8 @@ try {
     delete[] spans_done;
     seg_data.push_back(data);
 
+    _continents.check(_dimension, segment, "createSegment end");
+    printf("CreateSegment end\n");
     return ID;
 } catch (const exception& e){
     std::string msg = "Problem during plate::createSegement: ";
@@ -1189,6 +1219,7 @@ try {
 ContinentId plate::getContinentAt(int x, int y) const
 {
 try {
+    _continents.check(_dimension, segment, "getContinentAt start");
     uint32_t lx = x, ly = y;
     uint32_t index = getMapIndex(&lx, &ly);
     ContinentId seg = segment[index];
@@ -1204,6 +1235,7 @@ try {
     {
         throw invalid_argument("Could not create segment");
     }
+    _continents.check(_dimension, segment, "getContinentAt end");
     return seg;
 } catch (const exception& e){
     std::string msg = "Problem during plate::getContinentAt: ";

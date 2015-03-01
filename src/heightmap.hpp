@@ -98,7 +98,19 @@ public:
         return *this;
     }
 
-    Value& operator[](unsigned int index) const
+    const Value& operator[](unsigned int index) const
+    {
+        if (index >= (_width*_height)) {
+            string s("invalid index: ");
+            s = s + Platec::to_string(index)
+                + ", width " + Platec::to_string(_width)
+                + ", height " + Platec::to_string(_height);
+            throw invalid_argument(s);
+        }
+        return this->_data[index];
+    }
+
+    Value& operator[](unsigned int index)
     {
         if (index >= (_width*_height)) {
             string s("invalid index: ");

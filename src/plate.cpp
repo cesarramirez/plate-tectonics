@@ -189,9 +189,12 @@ try {
 float plate::aggregateCrust(plate* p, uint32_t wx, uint32_t wy)
 {
 try {    
+    Continents continents(_worldDimension, segment);
+
     uint32_t lx = wx, ly = wy;
     const uint32_t index = getMapIndex(&lx, &ly);
     const ContinentId seg_id = segment[index];
+    p_assert(seg_id==continents[index],"");
 
     // This check forces the caller to do things in proper order!
     //

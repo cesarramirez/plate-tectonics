@@ -24,10 +24,53 @@
 #include "heightmap.hpp"
 #include "rectangle.hpp"
 #include "segment_data.hpp"
+ #include <stdio.h>
 
 #define CONT_BASE 1.0 ///< Height limit that separates seas from dry land.
 
 typedef uint32_t ContinentId;
+
+class Continents
+{
+public:
+	Continents(WorldDimension worldDimension)
+		: _worldDimension(worldDimension)
+	{
+		segment = new ContinentId[_worldDimension.getArea()];
+	};
+	Continents(WorldDimension worldDimension, ContinentId* originalSegment)
+		: _worldDimension(worldDimension)
+	{
+		segment = new ContinentId[_worldDimension.getArea()];
+		memcpy(segment, originalSegment, sizeof(ContinentId*) * _worldDimension.getArea());
+	};
+	~Continents()
+	{
+		delete[] segment;
+	}
+	const ContinentId& operator[](unsigned int index) const
+    {
+        if (index >= (_worldDimension.getArea())) {
+            string s("invalid index: ");
+            s = s + Platec::to_string(index);
+            throw invalid_argument(s);
+        }
+        return segment[index];
+    }
+
+    ContinentId& operator[](unsigned int index)
+    {
+        if (index >= (_worldDimension.getArea())) {
+            string s("invalid index: ");
+            s = s + Platec::to_string(index);
+            throw invalid_argument(s);
+        }
+        return segment[index];
+    }
+private:
+	ContinentId* segment;
+	WorldDimension _worldDimension;
+};
 
 class plate
 {

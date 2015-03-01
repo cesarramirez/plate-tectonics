@@ -43,7 +43,8 @@ plate::plate(long seed, const float* m, uint32_t w, uint32_t h, uint32_t _x, uin
              _randsource(seed),
              _dimension(w, h),
              mass(0), left(_x), top(_y), cx(0), cy(0), dx(0), dy(0),
-             map(w, h), age_map(w, h), _worldDimension(worldDimension)
+             map(w, h), age_map(w, h), _worldDimension(worldDimension),
+             _continents(_dimension)
 {
     if (NULL == m) {
         throw invalid_argument("the given heightmap should not be null");
@@ -68,6 +69,7 @@ plate::plate(long seed, const float* m, uint32_t w, uint32_t h, uint32_t _x, uin
     vx = cos(angle) * INITIAL_SPEED_X;
     vy = sin(angle) * INITIAL_SPEED_X;
     memset(segment, 255, plate_area * sizeof(uint32_t));
+    _continents.check(_dimension, segment);
 
     uint32_t k;
     for (uint32_t y = k = 0; y < _dimension.getHeight(); ++y) {
@@ -91,6 +93,8 @@ plate::plate(long seed, const float* m, uint32_t w, uint32_t h, uint32_t _x, uin
     // Normalize center of mass coordinates.
     cx /= mass;
     cy /= mass;
+
+    _continents.check(_dimension, segment);
 }
 
 plate::~plate() throw()
@@ -235,6 +239,7 @@ try {
       for (uint32_t x = seg_data[seg_id].getLeft(); x <= seg_data[seg_id].getRight(); ++x)
       {
         const uint32_t i = y * _dimension.getWidth() + x;
+        p_assert(segment[i]==continents[i],"");
         if ((segment[i] == seg_id) && (map[i] > 0))
         {
             p->addCrustByCollision(wx + x - lx, wy + y - ly,

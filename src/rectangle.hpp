@@ -49,6 +49,12 @@ public:
         _height += amount;
     }
 
+    bool operator==(const Dimension& other) const
+    {
+        return getWidth()==other.getWidth()
+            && getHeight()==other.getHeight();
+    };
+
 protected:
     uint32_t _width;
     uint32_t _height;

@@ -33,16 +33,17 @@ typedef uint32_t ContinentId;
 class Continents
 {
 public:
-	Continents(WorldDimension worldDimension)
-		: _worldDimension(worldDimension)
+	Continents(Dimension dimension)
+		: _dimension(dimension)
 	{
-		segment = new ContinentId[_worldDimension.getArea()];
+		segment = new ContinentId[_dimension.getArea()];
+		memset(segment, 255, _dimension.getArea() * sizeof(uint32_t));
 	};
-	Continents(WorldDimension worldDimension, ContinentId* originalSegment)
-		: _worldDimension(worldDimension)
+	Continents(Dimension dimension, ContinentId* originalSegment)
+		: _dimension(dimension)
 	{
-		segment = new ContinentId[_worldDimension.getArea()];
-		memcpy(segment, originalSegment, sizeof(ContinentId*) * _worldDimension.getArea());
+		segment = new ContinentId[_dimension.getArea()];
+		memcpy(segment, originalSegment, sizeof(ContinentId*) * _dimension.getArea());
 	};
 	~Continents()
 	{
@@ -50,7 +51,7 @@ public:
 	}
 	const ContinentId& operator[](unsigned int index) const
     {
-        if (index >= (_worldDimension.getArea())) {
+        if (index >= (_dimension.getArea())) {
             string s("invalid index: ");
             s = s + Platec::to_string(index);
             throw invalid_argument(s);
@@ -60,16 +61,26 @@ public:
 
     ContinentId& operator[](unsigned int index)
     {
-        if (index >= (_worldDimension.getArea())) {
+        if (index >= (_dimension.getArea())) {
             string s("invalid index: ");
             s = s + Platec::to_string(index);
             throw invalid_argument(s);
         }
         return segment[index];
     }
+    void check(Dimension d, ContinentId* otherData)
+    {
+    	p_assert(d==_dimension, "check continents dimensions");
+    	for (int i=0;i<_dimension.getArea();i++){
+    		p_assert(segment[i]==otherData[i], 
+    			std::string("check continents segment data, index "+Platec::to_string(i)
+    				+ ", segment[i]="+Platec::to_string(segment[i])
+    				+ ", otherData[i]="+Platec::to_string(otherData[i])));
+    	}
+    }
 private:
 	ContinentId* segment;
-	WorldDimension _worldDimension;
+	Dimension _dimension;
 };
 
 class plate
@@ -315,6 +326,7 @@ class plate
 
 	std::vector<SegmentData> seg_data; ///< Details of each crust segment.
 	ContinentId* segment;              ///< Segment ID of each piece of continental crust.
+	Continents _continents;
 };
 
 #endif
